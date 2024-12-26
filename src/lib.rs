@@ -129,6 +129,8 @@ impl<T: Clone> Urn<T> {
             tree: go(w_outer, a_outer, self.size, self.tree),
         }
     }
+
+    // TODO: implement `uninsert` (section 3.6 of the paper)
 }
 
 /* -------------------------------------------------------------------------- */
@@ -204,8 +206,8 @@ impl<T: Clone> Tree<T> {
     }
 
     /// Samples from the tree, and returns the sampled element and its weight,
-    /// along with a new tree with the sampled elements removed and `a` with
-    /// weight `w` added.
+    /// along with a new tree with the sampled elements removed and a new element
+    /// `a` with weight `w` added.
     fn replace(
         &self,
         w: Weight,
