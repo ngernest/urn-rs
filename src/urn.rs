@@ -1,6 +1,13 @@
 #![allow(dead_code)]
 
-use crate::types::{Index, Tree, Tree::*, Urn, Weight};
+use crate::{
+    almost_perfect::almost_perfect,
+    types::{
+        Index,
+        Tree::{self, *},
+        Urn, Weight,
+    },
+};
 
 /* -------------------------------------------------------------------------- */
 /*                                   Helpers                                  */
@@ -38,8 +45,8 @@ fn singleton<T: Clone>(w: Weight, a: T) -> Urn<T> {
 /// Naive implementation of `from_list`, which just folds `insert` over a
 /// vector of (weight, element) pairs.
 /// TODO: add QC property that says `from_list` behaves the same as `from_list_naive`
-fn from_list_naive<T: Clone>(elts: Vec<(Weight, T)>) -> Option<Urn<T>> {
-    match elts.as_slice() {
+fn from_list_naive<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
+    match elems.as_slice() {
         [] => None,
         [(w, a), ws @ ..] => Some(
             ws.iter()
@@ -47,6 +54,19 @@ fn from_list_naive<T: Clone>(elts: Vec<(Weight, T)>) -> Option<Urn<T>> {
                     acc.insert(*w_new, a_new.clone())
                 }),
         ),
+    }
+}
+
+/// An optimized version of `from_list`, which builds an almost perfect tree
+/// in linear time (see `almost_perfect.rs`)
+fn from_list<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
+    if elems.is_empty() {
+        None
+    } else {
+        Some(Urn {
+            size: elems.len() as u32,
+            tree: almost_perfect(elems),
+        })
     }
 }
 
