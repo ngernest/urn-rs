@@ -135,6 +135,9 @@ impl<T: Clone> Urn<T> {
     }
 
     // TODO: implement `uninsert` (section 3.6 of the paper)
+    fn uninsert(self) -> ((Weight, T), Weight, Option<Self>) {
+        todo!()
+    }
 }
 
 /* -------------------------------------------------------------------------- */
