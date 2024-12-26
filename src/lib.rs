@@ -1,6 +1,46 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+#![allow(dead_code)]
+
+/// The datatype for weights (`u32` for now)
+type Weight = u32;
+
+/// Datatype for indexes (same as weights)
+type Index = Weight;
+
+/// Polymorphic binary trees, with a weight at each node/leaf
+#[derive(Debug, PartialEq)]
+enum Tree<T> {
+    Leaf(Weight, T),
+    Node(Weight, Box<Tree<T>>, Box<Tree<T>>),
 }
+
+impl<T> Tree<T> {
+    /// Retrieves the weight of a tree
+    fn weight(&self) -> &Weight {
+        match self {
+            Tree::Leaf(w, _) => w,
+            Tree::Node(w, _, _) => w,
+        }
+    }
+}
+
+/// Samples the value at index `i` from a `tree`
+fn sample<T>(tree: &Tree<T>, i: u32) -> &T {
+    match tree {
+        Tree::Leaf(_, a) => a,
+        Tree::Node(_, l, r) => {
+            let wl = l.weight();
+            if i < *wl {
+                sample(l, i)
+            } else {
+                sample(r, i - wl)
+            }
+        }
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                    Tests                                   */
+/* -------------------------------------------------------------------------- */
 
 #[cfg(test)]
 mod tests {
