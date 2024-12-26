@@ -1,7 +1,6 @@
 mod almost_perfect;
 mod types;
-mod urn_deterministic;
-mod urn_random;
+mod urn;
 
 fn main() {
     println!("Hello!");

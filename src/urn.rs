@@ -8,6 +8,7 @@ use crate::{
         Urn, Weight,
     },
 };
+use rand::prelude::*;
 
 /* -------------------------------------------------------------------------- */
 /*                                   Helpers                                  */
@@ -28,6 +29,12 @@ fn leaf<T: Clone>(w: Weight, a: T) -> Tree<T> {
 /// returning `true` if so and `false` otherwise
 fn test_bit(input: u32, n: u32) -> bool {
     (input & (1 << n)) != 0
+}
+
+/// Produces a value uniformly at random from the range `[0, w]`
+fn sample_weight(w: Weight) -> Weight {
+    let mut rng = thread_rng();
+    rng.gen_range(0..=w)
 }
 
 /* -------------------------------------------------------------------------- */
@@ -70,6 +77,10 @@ fn from_list<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
     }
 }
 
+/* -------------------------------------------------------------------------- */
+/*                Deterministic (index-based) methods for Urns                */
+/* -------------------------------------------------------------------------- */
+
 impl<T: Clone> Urn<T> {
     /// Fetches the `size` of the urn
     pub fn size(&self) -> u32 {
@@ -82,12 +93,12 @@ impl<T: Clone> Urn<T> {
     }
 
     /// Same as the `sample_index` method for `Tree<T>`
-    pub fn sample_index(self, i: u32) -> T {
+    fn sample_index(self, i: u32) -> T {
         self.tree.sample_index(i)
     }
 
     /// Same as the `update_index` method for `Tree<T>`
-    pub fn update_index<F>(
+    fn update_index<F>(
         &self,
         f: F,
         i: Index,
@@ -107,7 +118,7 @@ impl<T: Clone> Urn<T> {
     }
 
     /// Same as the `replace` method for `Tree<T>`
-    pub fn replace_index(
+    fn replace_index(
         &self,
         w: Weight,
         a: &T,
@@ -212,7 +223,7 @@ impl<T: Clone> Urn<T> {
 
     /// Removes the element at index `i` in the urn, returning the element,
     /// its weight, and an optional new urn
-    pub fn remove_index(self, i: Index) -> ((Weight, T), Option<Self>) {
+    fn remove_index(self, i: Index) -> ((Weight, T), Option<Self>) {
         let ((w, a), lb, urn_opt) = self.uninsert();
         match urn_opt {
             None => ((w, a), None),
@@ -230,6 +241,35 @@ impl<T: Clone> Urn<T> {
                 }
             }
         }
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                           Random methods for Urns                          */
+/* -------------------------------------------------------------------------- */
+
+impl<T: Clone> Urn<T> {
+    pub fn sample(self) -> T {
+        let i = sample_weight(self.weight());
+        self.sample_index(i)
+    }
+
+    pub fn update<F>(&self, f: F) -> ((Weight, &T), (Weight, &T), Self)
+    where
+        F: Fn(Weight, &T) -> (Weight, &T),
+    {
+        let i = sample_weight(self.weight());
+        self.update_index(f, i)
+    }
+
+    pub fn replace(&self, w: Weight, a: &T) -> ((Weight, &T), Self) {
+        let i = sample_weight(self.weight());
+        self.replace_index(w, a, i)
+    }
+
+    pub fn remove(self) -> ((Weight, T), Option<Self>) {
+        let i = sample_weight(self.weight());
+        self.remove_index(i)
     }
 }
 
