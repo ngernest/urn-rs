@@ -67,6 +67,23 @@ impl<T: Clone> Urn<T> {
         )
     }
 
+    /// Same as the `replace` method for `Tree<T>`
+    fn replace(
+        &self,
+        w: Weight,
+        a: &'static T,
+        i: Index,
+    ) -> ((Weight, &T), Self) {
+        let (old, new_tree) = self.tree.replace(w, a, i);
+        (
+            old,
+            Urn {
+                size: self.size,
+                tree: new_tree,
+            },
+        )
+    }
+
     /// Inserts a new element `a` with weight `w` into the `Urn`
     fn insert(self, w_outer: Weight, a_outer: T) -> Self {
         /// Helper function which updates the weights on all the
