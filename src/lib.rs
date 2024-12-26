@@ -56,17 +56,17 @@ impl<T: Clone> Urn<T> {
     }
 
     /// Same as the `update` method for `Tree<T>`
-    fn update<F>(&self, upd: F, i: Index) -> ((Weight, &T), (Weight, &T), Self)
+    fn update<F>(&self, f: F, i: Index) -> ((Weight, &T), (Weight, &T), Self)
     where
         F: for<'a> Fn(Weight, &'a T) -> (Weight, &'a T),
     {
-        let (old, new, new_tree) = self.tree.update(upd, i);
+        let (old, new, new_tree) = self.tree.update(f, i);
         (
             old,
             new,
             Urn {
-                size: self.size,
                 tree: new_tree,
+                ..*self
             },
         )
     }
@@ -82,8 +82,8 @@ impl<T: Clone> Urn<T> {
         (
             old,
             Urn {
-                size: self.size,
                 tree: new_tree,
+                ..*self
             },
         )
     }
@@ -175,6 +175,12 @@ impl<T: Clone> Urn<T> {
                 tree,
             }),
         )
+    }
+
+    /// Removes the element at index `i` in the urn, returning the element,
+    /// its weight, and an optional new urn
+    fn remove(self, _i: Index) -> ((Weight, T), Option<Self>) {
+        todo!()
     }
 }
 
