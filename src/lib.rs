@@ -142,23 +142,25 @@ impl<T: Clone> Tree<T> {
         }
     }
 
-    /// Updates the element at index `i` using the functino `upd`, returning
-    /// the old and new (weight, element) pairs, as wel as the updated tree
-    /// (`upd` needs to implement the `Fn` trait, since we want to be able
-    /// to call it repeatedly without mutating state)
-    fn update<F>(&self, upd: F, i: Index) -> ((Weight, &T), (Weight, &T), Self)
+    /// `t.update(f, i)` samples an element from the tree `t`, then replaces the
+    /// chosen element `a` and its weight `w` by a new element `a_new`
+    /// with weight `w_new`, where `(w_new, a_new) = f(w, a)`.    
+    /// This function returns a triple `((w, a), (w_new, a_new), t_new)`,
+    /// where `t_new` is the same tree as `t`,
+    /// but with `(w, a)` replaced by `(w_new, a_new)`.
+    fn update<F>(&self, f: F, i: Index) -> ((Weight, &T), (Weight, &T), Self)
     where
-        F: for<'a> Fn(Weight, &'a T) -> (Weight, &'a T),
+        F: for<'a> FnOnce(Weight, &'a T) -> (Weight, &'a T),
     {
         match self {
             Tree::Leaf(w, a) => {
-                let (w_new, a_new) = upd(*w, a);
+                let (w_new, a_new) = f(*w, a);
                 ((*w, a), (w_new, a_new), Tree::Leaf(w_new, a_new.clone()))
             }
             Tree::Node(w, l, r) => {
                 let wl = l.weight();
                 if i < wl {
-                    let (old, new, l_new) = l.update(upd, i);
+                    let (old, new, l_new) = l.update(f, i);
                     (
                         old,
                         new,
@@ -169,7 +171,7 @@ impl<T: Clone> Tree<T> {
                         ),
                     )
                 } else {
-                    let (old, new, r_new) = r.update(upd, i - wl);
+                    let (old, new, r_new) = r.update(f, i - wl);
                     (
                         old,
                         new,
@@ -182,6 +184,19 @@ impl<T: Clone> Tree<T> {
                 }
             }
         }
+    }
+
+    /// Samples from the tree, and returns the sampled element and its weight,
+    /// along with a new tree with the sampled elements removed and `a` with
+    /// weight `w` added.
+    fn replace(
+        &self,
+        w: Weight,
+        a: &'static T,
+        i: Index,
+    ) -> ((Weight, &T), Self) {
+        let (old, _, new_tree) = self.update(|_, _| (w, a), i);
+        (old, new_tree)
     }
 }
 
