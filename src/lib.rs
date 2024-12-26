@@ -72,10 +72,10 @@ impl<T: Clone> Urn<T> {
     }
 
     /// Same as the `replace` method for `Tree<T>`
-    fn replace(
+    fn replace<'a>(
         &self,
         w: Weight,
-        a: &'static T,
+        a: &'a T,
         i: Index,
     ) -> ((Weight, &T), Self) {
         let (old, new_tree) = self.tree.replace(w, a, i);
@@ -135,9 +135,9 @@ impl<T: Clone> Urn<T> {
     }
 
     /// `uninsert`s (deletes) the most-recently-inserted weighted value `(w, a)`
-    /// from the urn, returning `(w, a)`, the lower bound for the bucket that
-    /// previously contained `a`, and an optional new urn (since `uninsert`-ing
-    /// from an `Urn` of size 1 produces `None`)
+    /// from the urn, returning `(w, a)`, the lower bound `lb` for the bucket
+    /// that previously contained `a`, and an optional new urn
+    /// (since `uninsert`-ing from an `Urn` of size 1 produces `None`)
     fn uninsert(self) -> ((Weight, T), Weight, Option<Self>) {
         fn go<T: Clone>(
             path: u32,
@@ -148,28 +148,26 @@ impl<T: Clone> Urn<T> {
                 Tree::Node(w, l, r) => {
                     let new_path = path >> 1;
                     if test_bit(path, 0) {
-                        let ((w_new, a_new), lower_bnd, r_opt) =
-                            go(new_path, *r);
+                        let ((w_new, a_new), lb, r_opt) = go(new_path, *r);
                         let new_tree = r_opt.map_or(*l.clone(), |r_new| {
                             Tree::Node(w - w_new, l, Box::new(r_new))
                         });
-                        ((w_new, a_new), lower_bnd, Some(new_tree))
+                        ((w_new, a_new), lb, Some(new_tree))
                     } else {
-                        let ((w_new, a_new), lower_bnd, l_opt) =
-                            go(new_path, *l);
+                        let ((w_new, a_new), lb, l_opt) = go(new_path, *l);
                         let new_tree = l_opt.map_or(*r.clone(), |l_new| {
                             Tree::Node(w - w_new, Box::new(l_new), r)
                         });
-                        ((w_new, a_new), lower_bnd, Some(new_tree))
+                        ((w_new, a_new), lb, Some(new_tree))
                     }
                 }
             }
         }
 
-        let ((w, a), lower_bnd, tree_opt) = go(self.size - 1, self.tree);
+        let ((w, a), lb, tree_opt) = go(self.size - 1, self.tree);
         (
             (w, a),
-            lower_bnd,
+            lb,
             tree_opt.map(|tree| Self {
                 size: self.size - 1,
                 tree,
@@ -179,8 +177,23 @@ impl<T: Clone> Urn<T> {
 
     /// Removes the element at index `i` in the urn, returning the element,
     /// its weight, and an optional new urn
-    fn remove(self, _i: Index) -> ((Weight, T), Option<Self>) {
-        todo!()
+    fn remove(self, i: Index) -> ((Weight, T), Option<Self>) {
+        let ((w, a), lb, urn_opt) = self.uninsert();
+        match urn_opt {
+            None => ((w, a), None),
+            Some(new_urn) => {
+                if i < lb {
+                    let ((w_new, a_new), final_urn) = new_urn.replace(w, &a, i);
+                    ((w_new, a_new.clone()), Some(final_urn))
+                } else if i < lb + w {
+                    ((w, a), Some(new_urn))
+                } else {
+                    let ((w_new, a_new), final_urn) =
+                        new_urn.replace(w, &a, i - w);
+                    ((w_new, a_new.clone()), Some(final_urn))
+                }
+            }
+        }
     }
 }
 
@@ -259,17 +272,17 @@ impl<T: Clone> Tree<T> {
     /// Samples from the tree, and returns the sampled element and its weight,
     /// along with a new tree with the sampled elements removed and a new element
     /// `a` with weight `w` added.
-    fn replace(
+    fn replace<'a>(
         &self,
         w: Weight,
-        a: &'static T,
+        a: &'a T,
         i: Index,
     ) -> ((Weight, &T), Self) {
         // TODO: right now we just use the definition from the paper,
         // but in the future, we should adapt Justin's OCaml implementation
         // for `update()` for efficiency purposes
         // (that way we don't have to pass a closure to `update()`)
-        let (old, _, new_tree) = self.update(|_, _| (w, a), i);
+        let (old, _, new_tree) = self.update(|_, _| (w, &a), i);
         (old, new_tree)
     }
 }
