@@ -13,6 +13,8 @@ enum Tree<T: Clone> {
     Node(Weight, Box<Tree<T>>, Box<Tree<T>>),
 }
 
+/// Smart constructor for `Node`s
+/// (automatically wraps the two subtrees in `Box`es)
 fn node<T: Clone>(w: Weight, l: Tree<T>, r: Tree<T>) -> Tree<T> {
     Tree::Node(w, Box::new(l), Box::new(r))
 }
@@ -43,6 +45,8 @@ impl<T: Clone> Tree<T> {
 
     /// Updates the element at index `i` using the functino `upd`, returning
     /// the old and new (weight, element) pairs, as wel as the updated tree
+    /// (`upd` needs to implement the `Fn` trait, since we want to be able
+    /// to call it repeatedly without mutating state)
     fn update<F>(&self, upd: F, i: Index) -> ((Weight, &T), (Weight, &T), Self)
     where
         F: for<'a> Fn(Weight, &'a T) -> (Weight, &'a T),
