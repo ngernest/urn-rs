@@ -13,6 +13,10 @@ enum Tree<T: Clone> {
     Node(Weight, Box<Tree<T>>, Box<Tree<T>>),
 }
 
+fn node<T: Clone>(w: Weight, l: Tree<T>, r: Tree<T>) -> Tree<T> {
+    Tree::Node(w, Box::new(l), Box::new(r))
+}
+
 impl<T: Clone> Tree<T> {
     /// Retrieves the weight of a tree
     fn weight(&self) -> Weight {
@@ -85,10 +89,26 @@ impl<T: Clone> Tree<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use Tree::*;
 
+    /// Example from figure 5 in the paper
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+    fn sample_example() {
+        let tree = node(
+            21,
+            node(
+                9,
+                node(5, Leaf(4, 'a'), Leaf(1, 'b')),
+                node(4, Leaf(2, 'c'), Leaf(2, 'd')),
+            ),
+            node(
+                12,
+                node(7, Leaf(2, 'e'), Leaf(5, 'f')),
+                node(5, Leaf(3, 'g'), Leaf(2, 'h')),
+            ),
+        );
+        let expected = 'f';
+        let &actual = tree.sample(12);
+        assert_eq!(expected, actual);
     }
 }
