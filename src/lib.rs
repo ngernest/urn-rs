@@ -61,7 +61,7 @@ impl<T: Clone> Urn<T> {
     /// Same as the `update` method for `Tree<T>`
     fn update<F>(&self, f: F, i: Index) -> ((Weight, &T), (Weight, &T), Self)
     where
-        F: for<'a> Fn(Weight, &'a T) -> (Weight, &'a T),
+        F: Fn(Weight, &T) -> (Weight, &T),
     {
         let (old, new, new_tree) = self.tree.update(f, i);
         (
@@ -75,7 +75,7 @@ impl<T: Clone> Urn<T> {
     }
 
     /// Same as the `replace` method for `Tree<T>`
-    fn replace<'a>(&self, w: Weight, a: &T, i: Index) -> ((Weight, &T), Self) {
+    fn replace(&self, w: Weight, a: &T, i: Index) -> ((Weight, &T), Self) {
         let (old, new_tree) = self.tree.replace(w, a, i);
         (
             old,
@@ -231,7 +231,7 @@ impl<T: Clone> Tree<T> {
     /// but with `(w, a)` replaced by `(w_new, a_new)`.
     fn update<F>(&self, f: F, i: Index) -> ((Weight, &T), (Weight, &T), Self)
     where
-        F: for<'a> FnOnce(Weight, &'a T) -> (Weight, &'a T),
+        F: FnOnce(Weight, &T) -> (Weight, &T),
     {
         match self {
             Leaf(w, a) => {
@@ -262,7 +262,7 @@ impl<T: Clone> Tree<T> {
     /// Samples from the tree, and returns the sampled element and its weight,
     /// along with a new tree with the sampled elements removed and a new element
     /// `a` with weight `w` added.
-    fn replace<'a>(
+    fn replace(
         &self,
         w_outer: Weight,
         a_outer: &T,
