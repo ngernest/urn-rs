@@ -47,6 +47,29 @@ struct Urn<T: Clone> {
 /*                             Methods for Urn<T>                             */
 /* -------------------------------------------------------------------------- */
 
+/// Creates a singleton urn containing element `a` with weight `w`
+fn singleton<T: Clone>(w: Weight, a: T) -> Urn<T> {
+    Urn {
+        size: 1,
+        tree: Leaf(w, a),
+    }
+}
+
+/// Naive implementation of `from_list`, which just folds `insert` over a
+/// vector of (weight, element) pairs.
+/// TODO: add QC property that says `from_list` behaves the same as `from_list_naive`
+fn from_list_naive<T: Clone>(elts: Vec<(Weight, T)>) -> Option<Urn<T>> {
+    match elts.as_slice() {
+        [] => None,
+        [(w, a), ws @ ..] => Some(
+            ws.iter()
+                .fold(singleton(*w, a.clone()), |acc, (w_new, a_new)| {
+                    acc.insert(*w_new, a_new.clone())
+                }),
+        ),
+    }
+}
+
 impl<T: Clone> Urn<T> {
     /// Same as the `weight` method for `Tree<T>`
     fn weight(&self) -> Weight {
