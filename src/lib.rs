@@ -134,9 +134,47 @@ impl<T: Clone> Urn<T> {
         }
     }
 
-    // TODO: implement `uninsert` (section 3.6 of the paper)
+    /// `uninsert`s (deletes) the most-recently-inserted weighted value `(w, a)`
+    /// from the urn, returning `(w, a)`, the lower bound for the bucket that
+    /// previously contained `a`, and an optional new urn (since `uninsert`-ing
+    /// from an `Urn` of size 1 produces `None`)
     fn uninsert(self) -> ((Weight, T), Weight, Option<Self>) {
-        todo!()
+        fn go<T: Clone>(
+            path: u32,
+            tree: Tree<T>,
+        ) -> ((Weight, T), Weight, Option<Tree<T>>) {
+            match tree {
+                Tree::Leaf(w, a) => ((w, a), 0, None),
+                Tree::Node(w, l, r) => {
+                    let new_path = path >> 1;
+                    if test_bit(path, 0) {
+                        let ((w_new, a_new), lower_bnd, r_opt) =
+                            go(new_path, *r);
+                        let new_tree = r_opt.map_or(*l.clone(), |r_new| {
+                            Tree::Node(w - w_new, l, Box::new(r_new))
+                        });
+                        ((w_new, a_new), lower_bnd, Some(new_tree))
+                    } else {
+                        let ((w_new, a_new), lower_bnd, l_opt) =
+                            go(new_path, *l);
+                        let new_tree = l_opt.map_or(*r.clone(), |l_new| {
+                            Tree::Node(w - w_new, Box::new(l_new), r)
+                        });
+                        ((w_new, a_new), lower_bnd, Some(new_tree))
+                    }
+                }
+            }
+        }
+
+        let ((w, a), lower_bnd, tree_opt) = go(self.size - 1, self.tree);
+        (
+            (w, a),
+            lower_bnd,
+            tree_opt.map(|tree| Self {
+                size: self.size - 1,
+                tree,
+            }),
+        )
     }
 }
 
