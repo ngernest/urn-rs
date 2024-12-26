@@ -1,6 +1,8 @@
-// use crate::types::{Tree, Tree::*};
-
 #![allow(dead_code)]
+
+use core::panic;
+
+use crate::types::{Tree, Tree::*, Weight};
 
 /// Reverses the lowest `n` bits of the number `x`
 fn reverse_bits(n: u32, x: u32) -> u32 {
@@ -20,6 +22,89 @@ fn reverse_bits(n: u32, x: u32) -> u32 {
     }
     go(0, n, x)
 }
+
+/// Smart constructor: builds a `Node` whose weight is the
+/// sum of the two subtree's weights
+fn node<T: Clone>(l: Tree<T>, r: Tree<T>) -> Tree<T> {
+    Node(l.weight() + r.weight(), Box::new(l), Box::new(r))
+}
+
+/// Alias for the `Leaf` constructor
+fn leaf<T: Clone>(w: Weight, a: T) -> Tree<T> {
+    Leaf(w, a)
+}
+
+/// Builds an almost perfect tree using the weights and values in `elems`
+fn almost_perfect<T: Clone>(elems: Vec<(Weight, T)>) -> Tree<T> {
+    fn go<T: Clone>(
+        depth: u32,
+        index: u32,
+        elems: &[(Weight, T)],
+        og_size: u32,
+        perfect_depth: u32,
+        remainder: u32,
+    ) -> (Tree<T>, &[(Weight, T)], u32) {
+        if depth == 0 {
+            if reverse_bits(perfect_depth, index) < remainder {
+                match elems {
+                    [(wl, tl), (wr, tr), tail @ ..] => (
+                        node(leaf(*wl, tl.clone()), leaf(*wr, tr.clone())),
+                        tail,
+                        index + 1,
+                    ),
+                    _ => panic!(
+                        "Expected size {} but got input of length {} instead",
+                        og_size,
+                        elems.len()
+                    ),
+                }
+            } else {
+                match elems {
+                    [(w, x), tail @ ..] => {
+                        (leaf(*w, x.clone()), tail, index + 1)
+                    }
+                    _ => panic!(
+                        "Expected size {} but got input of length {} instead",
+                        og_size,
+                        elems.len()
+                    ),
+                }
+            }
+        } else {
+            let (l, l_elems, l_index) =
+                go(depth - 1, index, elems, og_size, perfect_depth, remainder);
+            let (r, r_elems, r_index) = go(
+                depth - 1,
+                l_index,
+                l_elems,
+                og_size,
+                perfect_depth,
+                remainder,
+            );
+            (node(l, r), r_elems, r_index)
+        }
+    }
+
+    let original_size = elems.len() as u32;
+    // `ilog2` computes the floor of `size.log2()`
+    let perfect_depth = original_size.ilog2();
+    let remainder = original_size - (perfect_depth << 1);
+    let depth = perfect_depth;
+    let index = 0;
+    let (tree, _, _) = go(
+        depth,
+        index,
+        elems.as_slice(),
+        original_size,
+        perfect_depth,
+        remainder,
+    );
+    tree
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                    Tests                                   */
+/* -------------------------------------------------------------------------- */
 
 #[cfg(test)]
 mod tests {
