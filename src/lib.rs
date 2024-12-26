@@ -21,18 +21,18 @@ impl<T> Tree<T> {
             Tree::Node(w, _, _) => w,
         }
     }
-}
 
-/// Samples the value at index `i` from a `tree`
-fn sample<T>(tree: &Tree<T>, i: u32) -> &T {
-    match tree {
-        Tree::Leaf(_, a) => a,
-        Tree::Node(_, l, r) => {
-            let wl = l.weight();
-            if i < *wl {
-                sample(l, i)
-            } else {
-                sample(r, i - wl)
+    /// Samples the value at index `i` from a `tree`
+    fn sample(&self, i: u32) -> &T {
+        match self {
+            Tree::Leaf(_, a) => a,
+            Tree::Node(_, l, r) => {
+                let wl = l.weight();
+                if i < *wl {
+                    l.sample(i)
+                } else {
+                    r.sample(i - wl)
+                }
             }
         }
     }
