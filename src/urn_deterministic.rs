@@ -81,13 +81,13 @@ impl<T: Clone> Urn<T> {
         self.tree.weight()
     }
 
-    /// Same as the `sample` method for `Tree<T>`
-    pub fn sample(self, i: u32) -> T {
-        self.tree.sample(i)
+    /// Same as the `sample_index` method for `Tree<T>`
+    pub fn sample_index(self, i: u32) -> T {
+        self.tree.sample_index(i)
     }
 
-    /// Same as the `update` method for `Tree<T>`
-    pub fn update<F>(
+    /// Same as the `update_index` method for `Tree<T>`
+    pub fn update_index<F>(
         &self,
         f: F,
         i: Index,
@@ -95,7 +95,7 @@ impl<T: Clone> Urn<T> {
     where
         F: Fn(Weight, &T) -> (Weight, &T),
     {
-        let (old, new, new_tree) = self.tree.update(f, i);
+        let (old, new, new_tree) = self.tree.update_index(f, i);
         (
             old,
             new,
@@ -107,8 +107,13 @@ impl<T: Clone> Urn<T> {
     }
 
     /// Same as the `replace` method for `Tree<T>`
-    pub fn replace(&self, w: Weight, a: &T, i: Index) -> ((Weight, &T), Self) {
-        let (old, new_tree) = self.tree.replace(w, a, i);
+    pub fn replace_index(
+        &self,
+        w: Weight,
+        a: &T,
+        i: Index,
+    ) -> ((Weight, &T), Self) {
+        let (old, new_tree) = self.tree.replace_index(w, a, i);
         (
             old,
             Urn {
@@ -207,19 +212,20 @@ impl<T: Clone> Urn<T> {
 
     /// Removes the element at index `i` in the urn, returning the element,
     /// its weight, and an optional new urn
-    pub fn remove(self, i: Index) -> ((Weight, T), Option<Self>) {
+    pub fn remove_index(self, i: Index) -> ((Weight, T), Option<Self>) {
         let ((w, a), lb, urn_opt) = self.uninsert();
         match urn_opt {
             None => ((w, a), None),
             Some(new_urn) => {
                 if i < lb {
-                    let ((w_new, a_new), final_urn) = new_urn.replace(w, &a, i);
+                    let ((w_new, a_new), final_urn) =
+                        new_urn.replace_index(w, &a, i);
                     ((w_new, a_new.clone()), Some(final_urn))
                 } else if i < lb + w {
                     ((w, a), Some(new_urn))
                 } else {
                     let ((w_new, a_new), final_urn) =
-                        new_urn.replace(w, &a, i - w);
+                        new_urn.replace_index(w, &a, i - w);
                     ((w_new, a_new.clone()), Some(final_urn))
                 }
             }
@@ -252,7 +258,7 @@ mod tests {
             ),
         );
         let expected = 'f';
-        let actual = tree.sample(12);
+        let actual = tree.sample_index(12);
         assert_eq!(expected, actual);
     }
 

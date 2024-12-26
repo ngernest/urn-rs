@@ -17,7 +17,3 @@ where
 {
     f(&urn, sample_weight(urn.weight()))
 }
-
-fn sample_index<T: Clone>(urn: Urn<T>, i: Index) -> T {
-    urn.tree.sample(i)
-}

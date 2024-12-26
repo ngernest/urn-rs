@@ -39,15 +39,15 @@ impl<T: Clone> Tree<T> {
     }
 
     /// Samples the value at index `i` from a `tree`
-    pub fn sample(self, i: u32) -> T {
+    pub fn sample_index(self, i: u32) -> T {
         match self {
             Leaf(_, a) => a.clone(),
             Node(_, l, r) => {
                 let wl = l.weight();
                 if i < wl {
-                    l.sample(i)
+                    l.sample_index(i)
                 } else {
-                    r.sample(i - wl)
+                    r.sample_index(i - wl)
                 }
             }
         }
@@ -59,7 +59,7 @@ impl<T: Clone> Tree<T> {
     /// This function returns a triple `((w, a), (w_new, a_new), t_new)`,
     /// where `t_new` is the same tree as `t`,
     /// but with `(w, a)` replaced by `(w_new, a_new)`.
-    pub fn update<F>(
+    pub fn update_index<F>(
         &self,
         f: F,
         i: Index,
@@ -75,14 +75,14 @@ impl<T: Clone> Tree<T> {
             Node(w, l, r) => {
                 let wl = l.weight();
                 if i < wl {
-                    let (old, new, l_new) = l.update(f, i);
+                    let (old, new, l_new) = l.update_index(f, i);
                     (
                         old,
                         new,
                         Node(w - old.0 + new.0, Box::new(l_new), r.clone()),
                     )
                 } else {
-                    let (old, new, r_new) = r.update(f, i - wl);
+                    let (old, new, r_new) = r.update_index(f, i - wl);
                     (
                         old,
                         new,
@@ -96,7 +96,7 @@ impl<T: Clone> Tree<T> {
     /// Samples from the tree, and returns the sampled element and its weight,
     /// along with a new tree with the sampled elements removed and a new element
     /// `a` with weight `w` added.
-    pub fn replace(
+    pub fn replace_index(
         &self,
         w_outer: Weight,
         a_outer: &T,
@@ -107,10 +107,11 @@ impl<T: Clone> Tree<T> {
             Node(w, l, r) => {
                 let wl = l.weight();
                 if i < wl {
-                    let (old, l_new) = l.replace(w_outer, a_outer, i);
+                    let (old, l_new) = l.replace_index(w_outer, a_outer, i);
                     (old, Node(w - old.0 + w_outer, Box::new(l_new), r.clone()))
                 } else {
-                    let (old, r_new) = r.replace(w_outer, a_outer, i - wl);
+                    let (old, r_new) =
+                        r.replace_index(w_outer, a_outer, i - wl);
                     (old, Node(w - old.0 + w_outer, l.clone(), Box::new(r_new)))
                 }
             }
