@@ -19,8 +19,51 @@ fn node<T: Clone>(w: Weight, l: Tree<T>, r: Tree<T>) -> Tree<T> {
     Tree::Node(w, Box::new(l), Box::new(r))
 }
 
+/// An `Urn` is a `Tree`, along with its `size`
+struct Urn<T: Clone> {
+    size: u32,
+    tree: Tree<T>,
+}
+
+/* -------------------------------------------------------------------------- */
+/*                             Methods for Urn<T>                             */
+/* -------------------------------------------------------------------------- */
+
+impl<T: Clone> Urn<T> {
+    /// Same as the `weight` method for `Tree<T>`
+    fn weight(&self) -> Weight {
+        self.tree.weight()
+    }
+
+    /// Same as the `sample` method for `Tree<T>`
+    fn sample(&self, i: u32) -> &T {
+        self.tree.sample(i)
+    }
+
+    /// Same as the `update` method for `Tree<T>`
+    fn update<F>(&self, upd: F, i: Index) -> ((Weight, &T), (Weight, &T), Self)
+    where
+        F: for<'a> Fn(Weight, &'a T) -> (Weight, &'a T),
+    {
+        let (old, new, new_tree) = self.tree.update(upd, i);
+        (
+            old,
+            new,
+            Urn {
+                size: self.size,
+                tree: new_tree,
+            },
+        )
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                             Methods for Tree<T>                            */
+/* -------------------------------------------------------------------------- */
+
 impl<T: Clone> Tree<T> {
-    /// Retrieves the weight of a tree
+    /// Retrieves the weight of a tree.
+    /// Invariant: `Node(w, l, r).weight() == l.weight() + r.weight()`
     fn weight(&self) -> Weight {
         match self {
             Tree::Leaf(w, _) => *w,
