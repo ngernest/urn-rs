@@ -20,6 +20,16 @@ fn node<T: Clone>(w: Weight, l: Tree<T>, r: Tree<T>) -> Tree<T> {
     Tree::Node(w, Box::new(l), Box::new(r))
 }
 
+/// Alias for the `Leaf` constructor
+fn leaf<T: Clone>(w: Weight, a: T) -> Tree<T> {
+    Tree::Leaf(w, a)
+}
+
+/// Tests whether the `n`-th bit of the `input` is set or not
+fn test_bit(input: u32, n: u32) -> bool {
+    (input & (1 << n)) != 0
+}
+
 /// An `Urn` is a `Tree`, along with its `size`
 struct Urn<T: Clone> {
     size: u32,
@@ -58,8 +68,49 @@ impl<T: Clone> Urn<T> {
     }
 
     /// Inserts a new element `a` with weight `w` into the `Urn`
-    fn insert(_w: Weight, _a: T) -> Self {
-        todo!()
+    fn insert(self, w_outer: Weight, a_outer: T) -> Self {
+        /// Helper function which updates the weights on all the
+        /// nodes encountered on a `path` through the `tree`.              
+        /// (The `path` is the binary representation of an integer,
+        /// where 0 is Left and 1 is right. We toggle the direction every time
+        /// we insert a new node to ensure that the tree is almost balanced.
+        /// See section 3.4-3.5 of the paper for details.)              
+        /// Note: since recursive closures aren't really possible
+        /// in Rust, and since nested functions can't access outer variables,
+        /// we need to supply the `w_outer` and `a_outer` arguments explicitly.
+        fn go<T: Clone>(
+            w_outer: Weight,
+            a_outer: T,
+            path: u32,
+            tree: Tree<T>,
+        ) -> Tree<T> {
+            match tree {
+                Tree::Leaf(w, a) => {
+                    node(w + w_outer, leaf(w, a), leaf(w_outer, a_outer))
+                }
+                Tree::Node(w, l, r) => {
+                    let new_path = path >> 1;
+                    if test_bit(path, 0) {
+                        node(
+                            w + w_outer,
+                            *l,
+                            go(w_outer, a_outer, new_path, *r),
+                        )
+                    } else {
+                        node(
+                            w + w_outer,
+                            go(w_outer, a_outer, new_path, *l),
+                            *r,
+                        )
+                    }
+                }
+            }
+        }
+
+        Urn {
+            size: self.size + 1,
+            tree: go(w_outer, a_outer, self.size, self.tree),
+        }
     }
 }
 
@@ -141,7 +192,6 @@ impl<T: Clone> Tree<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use Tree::*;
 
     /// Example from figure 5 in the paper
     #[test]
@@ -150,13 +200,13 @@ mod tests {
             21,
             node(
                 9,
-                node(5, Leaf(4, 'a'), Leaf(1, 'b')),
-                node(4, Leaf(2, 'c'), Leaf(2, 'd')),
+                node(5, leaf(4, 'a'), leaf(1, 'b')),
+                node(4, leaf(2, 'c'), leaf(2, 'd')),
             ),
             node(
                 12,
-                node(7, Leaf(2, 'e'), Leaf(5, 'f')),
-                node(5, Leaf(3, 'g'), Leaf(2, 'h')),
+                node(7, leaf(2, 'e'), leaf(5, 'f')),
+                node(5, leaf(3, 'g'), leaf(2, 'h')),
             ),
         );
         let expected = 'f';
