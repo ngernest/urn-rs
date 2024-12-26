@@ -31,7 +31,8 @@ fn leaf<T: Clone>(w: Weight, a: T) -> Tree<T> {
     Leaf(w, a)
 }
 
-/// Tests whether the `n`-th bit of the `input` is set or not
+/// Tests whether the `n`-th bit of the `input` is set,
+/// returning `true` if so and `false` otherwise
 fn test_bit(input: u32, n: u32) -> bool {
     (input & (1 << n)) != 0
 }
@@ -74,12 +75,7 @@ impl<T: Clone> Urn<T> {
     }
 
     /// Same as the `replace` method for `Tree<T>`
-    fn replace<'a>(
-        &self,
-        w: Weight,
-        a: &'a T,
-        i: Index,
-    ) -> ((Weight, &T), Self) {
+    fn replace<'a>(&self, w: Weight, a: &T, i: Index) -> ((Weight, &T), Self) {
         let (old, new_tree) = self.tree.replace(w, a, i);
         (
             old,
@@ -268,16 +264,23 @@ impl<T: Clone> Tree<T> {
     /// `a` with weight `w` added.
     fn replace<'a>(
         &self,
-        w: Weight,
-        a: &'a T,
+        w_outer: Weight,
+        a_outer: &T,
         i: Index,
     ) -> ((Weight, &T), Self) {
-        // TODO: right now we just use the definition from the paper,
-        // but in the future, we should adapt Justin's OCaml implementation
-        // for `update()` for efficiency purposes
-        // (that way we don't have to pass a closure to `update()`)
-        let (old, _, new_tree) = self.update(|_, _| (w, &a), i);
-        (old, new_tree)
+        match self {
+            Leaf(w, a) => ((*w, a), Leaf(w_outer, a_outer.clone())),
+            Node(w, l, r) => {
+                let wl = l.weight();
+                if i < wl {
+                    let (old, l_new) = l.replace(w_outer, a_outer, i);
+                    (old, Node(w - old.0 + w_outer, Box::new(l_new), r.clone()))
+                } else {
+                    let (old, r_new) = r.replace(w_outer, a_outer, i - wl);
+                    (old, Node(w - old.0 + w_outer, l.clone(), Box::new(r_new)))
+                }
+            }
+        }
     }
 }
 
