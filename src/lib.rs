@@ -71,6 +71,11 @@ fn from_list_naive<T: Clone>(elts: Vec<(Weight, T)>) -> Option<Urn<T>> {
 }
 
 impl<T: Clone> Urn<T> {
+    /// Fetches the `size` of the urn
+    fn size(&self) -> u32 {
+        self.size
+    }
+
     /// Same as the `weight` method for `Tree<T>`
     fn weight(&self) -> Weight {
         self.tree.weight()
