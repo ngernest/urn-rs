@@ -89,6 +89,7 @@ pub fn almost_perfect<T: Clone>(elems: Vec<(Weight, T)>) -> Tree<T> {
     }
 
     let original_size = elems.len() as u32;
+
     // `ilog2` computes the floor of `size.log2()`
     let perfect_depth = original_size.ilog2();
     let remainder = original_size - (perfect_depth << 1);

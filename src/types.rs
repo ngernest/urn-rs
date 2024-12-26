@@ -17,6 +17,7 @@ pub enum Tree<T: Clone> {
 }
 
 /// An `Urn` is a `Tree`, along with its `size`
+#[derive(Debug, PartialEq)]
 pub struct Urn<T: Clone> {
     pub size: u32,
     pub tree: Tree<T>,

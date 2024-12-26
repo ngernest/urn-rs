@@ -251,4 +251,31 @@ mod tests {
         let &actual = tree.sample(12);
         assert_eq!(expected, actual);
     }
+
+    #[test]
+    fn from_list_equiv_small() {
+        let elems = vec![(2, 'R'), (4, 'G'), (3, 'B')];
+        let naive_urn = from_list_naive(elems.clone()).unwrap();
+        let urn = from_list(elems).unwrap();
+        assert_eq!(naive_urn.size(), urn.size());
+        assert_eq!(naive_urn.weight(), urn.weight());
+    }
+
+    #[test]
+    fn from_list_equiv_big() {
+        let elems = vec![
+            (1, 'a'),
+            (2, 'b'),
+            (3, 'c'),
+            (4, 'd'),
+            (5, 'e'),
+            (6, 'f'),
+            (7, 'g'),
+            (8, 'h'),
+        ];
+        let naive_urn = from_list_naive(elems.clone()).unwrap();
+        let urn = from_list(elems).unwrap();
+        assert_eq!(naive_urn.size(), urn.size());
+        assert_eq!(naive_urn.weight(), urn.weight());
+    }
 }
