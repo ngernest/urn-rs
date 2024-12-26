@@ -1,5 +1,9 @@
 #![allow(dead_code)]
 
+/* -------------------------------------------------------------------------- */
+/*                              Type Definitions                              */
+/* -------------------------------------------------------------------------- */
+
 /// Weights are guaranteed to be non-negative since they're `u32`s
 type Weight = u32;
 
@@ -12,6 +16,12 @@ type Index = Weight;
 enum Tree<T: Clone> {
     Leaf(Weight, T),
     Node(Weight, Box<Tree<T>>, Box<Tree<T>>),
+}
+
+/// An `Urn` is a `Tree`, along with its `size`
+struct Urn<T: Clone> {
+    size: u32,
+    tree: Tree<T>,
 }
 
 use Tree::*;
@@ -35,12 +45,6 @@ fn leaf<T: Clone>(w: Weight, a: T) -> Tree<T> {
 /// returning `true` if so and `false` otherwise
 fn test_bit(input: u32, n: u32) -> bool {
     (input & (1 << n)) != 0
-}
-
-/// An `Urn` is a `Tree`, along with its `size`
-struct Urn<T: Clone> {
-    size: u32,
-    tree: Tree<T>,
 }
 
 /* -------------------------------------------------------------------------- */
