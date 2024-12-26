@@ -6,7 +6,8 @@ type Weight = u32;
 /// Datatype for indexes (same as weights)
 type Index = Weight;
 
-/// Polymorphic binary trees, with a weight at each node/leaf
+/// Polymorphic binary trees, with a weight at each node/leaf.      
+/// Invariant: `Node(w, l, r).weight() == l.weight() + r.weight()`
 #[derive(Debug, PartialEq, Clone)]
 enum Tree<T: Clone> {
     Leaf(Weight, T),
@@ -55,6 +56,11 @@ impl<T: Clone> Urn<T> {
             },
         )
     }
+
+    /// Inserts a new element `a` with weight `w` into the `Urn`
+    fn insert(_w: Weight, _a: T) -> Self {
+        todo!()
+    }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -62,8 +68,7 @@ impl<T: Clone> Urn<T> {
 /* -------------------------------------------------------------------------- */
 
 impl<T: Clone> Tree<T> {
-    /// Retrieves the weight of a tree.
-    /// Invariant: `Node(w, l, r).weight() == l.weight() + r.weight()`
+    /// Retrieves the weight of a tree
     fn weight(&self) -> Weight {
         match self {
             Tree::Leaf(w, _) => *w,
