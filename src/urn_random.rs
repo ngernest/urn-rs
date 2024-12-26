@@ -17,3 +17,6 @@ where
 {
     f(&urn, sample_weight(urn.weight()))
 }
+
+// TODO: figure out how to implement random versions of all the index-based
+// functions in `urn_deterministic.rs` (without using partial application)
