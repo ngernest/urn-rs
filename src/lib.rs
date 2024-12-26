@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-/// The datatype for weights (`u32` for now)
+/// Weights are guaranteed to be non-negative since they're `u32`s
 type Weight = u32;
 
 /// Datatype for indexes (same as weights)
@@ -13,6 +13,10 @@ enum Tree<T: Clone> {
     Leaf(Weight, T),
     Node(Weight, Box<Tree<T>>, Box<Tree<T>>),
 }
+
+/* -------------------------------------------------------------------------- */
+/*                                   Helpers                                  */
+/* -------------------------------------------------------------------------- */
 
 /// Smart constructor for `Node`s
 /// (automatically wraps the two subtrees in `Box`es)
