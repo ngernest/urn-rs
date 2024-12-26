@@ -72,22 +72,26 @@ fn from_list<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
 
 impl<T: Clone> Urn<T> {
     /// Fetches the `size` of the urn
-    fn size(&self) -> u32 {
+    pub fn size(&self) -> u32 {
         self.size
     }
 
     /// Same as the `weight` method for `Tree<T>`
-    fn weight(&self) -> Weight {
+    pub fn weight(&self) -> Weight {
         self.tree.weight()
     }
 
     /// Same as the `sample` method for `Tree<T>`
-    fn sample(&self, i: u32) -> &T {
+    pub fn sample(self, i: u32) -> T {
         self.tree.sample(i)
     }
 
     /// Same as the `update` method for `Tree<T>`
-    fn update<F>(&self, f: F, i: Index) -> ((Weight, &T), (Weight, &T), Self)
+    pub fn update<F>(
+        &self,
+        f: F,
+        i: Index,
+    ) -> ((Weight, &T), (Weight, &T), Self)
     where
         F: Fn(Weight, &T) -> (Weight, &T),
     {
@@ -103,7 +107,7 @@ impl<T: Clone> Urn<T> {
     }
 
     /// Same as the `replace` method for `Tree<T>`
-    fn replace(&self, w: Weight, a: &T, i: Index) -> ((Weight, &T), Self) {
+    pub fn replace(&self, w: Weight, a: &T, i: Index) -> ((Weight, &T), Self) {
         let (old, new_tree) = self.tree.replace(w, a, i);
         (
             old,
@@ -115,7 +119,7 @@ impl<T: Clone> Urn<T> {
     }
 
     /// Inserts a new element `a` with weight `w` into the `Urn`
-    fn insert(self, w_outer: Weight, a_outer: T) -> Self {
+    pub fn insert(self, w_outer: Weight, a_outer: T) -> Self {
         /// Helper function which updates the weights on all the
         /// nodes encountered on a `path` through the `tree`.              
         /// (The `path` is the binary representation of an integer,
@@ -203,7 +207,7 @@ impl<T: Clone> Urn<T> {
 
     /// Removes the element at index `i` in the urn, returning the element,
     /// its weight, and an optional new urn
-    fn remove(self, i: Index) -> ((Weight, T), Option<Self>) {
+    pub fn remove(self, i: Index) -> ((Weight, T), Option<Self>) {
         let ((w, a), lb, urn_opt) = self.uninsert();
         match urn_opt {
             None => ((w, a), None),
@@ -248,7 +252,7 @@ mod tests {
             ),
         );
         let expected = 'f';
-        let &actual = tree.sample(12);
+        let actual = tree.sample(12);
         assert_eq!(expected, actual);
     }
 

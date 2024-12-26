@@ -39,9 +39,9 @@ impl<T: Clone> Tree<T> {
     }
 
     /// Samples the value at index `i` from a `tree`
-    pub fn sample(&self, i: u32) -> &T {
+    pub fn sample(self, i: u32) -> T {
         match self {
-            Leaf(_, a) => a,
+            Leaf(_, a) => a.clone(),
             Node(_, l, r) => {
                 let wl = l.weight();
                 if i < wl {
