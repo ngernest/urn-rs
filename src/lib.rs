@@ -14,6 +14,8 @@ enum Tree<T: Clone> {
     Node(Weight, Box<Tree<T>>, Box<Tree<T>>),
 }
 
+use Tree::*;
+
 /* -------------------------------------------------------------------------- */
 /*                                   Helpers                                  */
 /* -------------------------------------------------------------------------- */
@@ -21,12 +23,12 @@ enum Tree<T: Clone> {
 /// Smart constructor for `Node`s
 /// (automatically wraps the two subtrees in `Box`es)
 fn node<T: Clone>(w: Weight, l: Tree<T>, r: Tree<T>) -> Tree<T> {
-    Tree::Node(w, Box::new(l), Box::new(r))
+    Node(w, Box::new(l), Box::new(r))
 }
 
 /// Alias for the `Leaf` constructor
 fn leaf<T: Clone>(w: Weight, a: T) -> Tree<T> {
-    Tree::Leaf(w, a)
+    Leaf(w, a)
 }
 
 /// Tests whether the `n`-th bit of the `input` is set or not
@@ -106,10 +108,10 @@ impl<T: Clone> Urn<T> {
             tree: Tree<T>,
         ) -> Tree<T> {
             match tree {
-                Tree::Leaf(w, a) => {
+                Leaf(w, a) => {
                     node(w + w_outer, leaf(w, a), leaf(w_outer, a_outer))
                 }
-                Tree::Node(w, l, r) => {
+                Node(w, l, r) => {
                     let new_path = path >> 1;
                     if test_bit(path, 0) {
                         node(
@@ -144,19 +146,19 @@ impl<T: Clone> Urn<T> {
             tree: Tree<T>,
         ) -> ((Weight, T), Weight, Option<Tree<T>>) {
             match tree {
-                Tree::Leaf(w, a) => ((w, a), 0, None),
-                Tree::Node(w, l, r) => {
+                Leaf(w, a) => ((w, a), 0, None),
+                Node(w, l, r) => {
                     let new_path = path >> 1;
                     if test_bit(path, 0) {
                         let ((w_new, a_new), lb, r_opt) = go(new_path, *r);
                         let new_tree = r_opt.map_or(*l.clone(), |r_new| {
-                            Tree::Node(w - w_new, l, Box::new(r_new))
+                            Node(w - w_new, l, Box::new(r_new))
                         });
                         ((w_new, a_new), lb, Some(new_tree))
                     } else {
                         let ((w_new, a_new), lb, l_opt) = go(new_path, *l);
                         let new_tree = l_opt.map_or(*r.clone(), |l_new| {
-                            Tree::Node(w - w_new, Box::new(l_new), r)
+                            Node(w - w_new, Box::new(l_new), r)
                         });
                         ((w_new, a_new), lb, Some(new_tree))
                     }
@@ -205,16 +207,16 @@ impl<T: Clone> Tree<T> {
     /// Retrieves the weight of a tree
     fn weight(&self) -> Weight {
         match self {
-            Tree::Leaf(w, _) => *w,
-            Tree::Node(w, _, _) => *w,
+            Leaf(w, _) => *w,
+            Node(w, _, _) => *w,
         }
     }
 
     /// Samples the value at index `i` from a `tree`
     fn sample(&self, i: u32) -> &T {
         match self {
-            Tree::Leaf(_, a) => a,
-            Tree::Node(_, l, r) => {
+            Leaf(_, a) => a,
+            Node(_, l, r) => {
                 let wl = l.weight();
                 if i < wl {
                     l.sample(i)
@@ -236,33 +238,25 @@ impl<T: Clone> Tree<T> {
         F: for<'a> FnOnce(Weight, &'a T) -> (Weight, &'a T),
     {
         match self {
-            Tree::Leaf(w, a) => {
+            Leaf(w, a) => {
                 let (w_new, a_new) = f(*w, a);
-                ((*w, a), (w_new, a_new), Tree::Leaf(w_new, a_new.clone()))
+                ((*w, a), (w_new, a_new), Leaf(w_new, a_new.clone()))
             }
-            Tree::Node(w, l, r) => {
+            Node(w, l, r) => {
                 let wl = l.weight();
                 if i < wl {
                     let (old, new, l_new) = l.update(f, i);
                     (
                         old,
                         new,
-                        Tree::Node(
-                            w - old.0 + new.0,
-                            Box::new(l_new),
-                            r.clone(),
-                        ),
+                        Node(w - old.0 + new.0, Box::new(l_new), r.clone()),
                     )
                 } else {
                     let (old, new, r_new) = r.update(f, i - wl);
                     (
                         old,
                         new,
-                        Tree::Node(
-                            w - old.0 + new.0,
-                            l.clone(),
-                            Box::new(r_new),
-                        ),
+                        Node(w - old.0 + new.0, l.clone(), Box::new(r_new)),
                     )
                 }
             }
