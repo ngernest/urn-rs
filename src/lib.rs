@@ -214,6 +214,10 @@ impl<T: Clone> Tree<T> {
         a: &'static T,
         i: Index,
     ) -> ((Weight, &T), Self) {
+        // TODO: right now we just use the definition from the paper,
+        // but in the future, we should adapt Justin's OCaml implementation
+        // for `update()` for efficiency purposes
+        // (that way we don't have to pass a closure to `update()`)
         let (old, _, new_tree) = self.update(|_, _| (w, a), i);
         (old, new_tree)
     }
