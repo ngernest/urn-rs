@@ -186,7 +186,7 @@ impl<T: Clone> Urn<T> {
     /// from the urn, returning `(w, a)`, the lower bound `lb` for the bucket
     /// that previously contained `a`, and an optional new urn
     /// (since `uninsert`-ing from an `Urn` of size 1 produces `None`)
-    fn uninsert(self) -> ((Weight, T), Weight, Option<Self>) {
+    pub fn uninsert(self) -> ((Weight, T), Weight, Option<Self>) {
         fn go<T: Clone>(
             path: u32,
             tree: Tree<T>,
@@ -198,13 +198,13 @@ impl<T: Clone> Urn<T> {
                     if test_bit(path, 0) {
                         let ((w_new, a_new), lb, r_opt) = go(new_path, *r);
                         let new_tree = r_opt.map_or(*l.clone(), |r_new| {
-                            Node(w - w_new, l, Box::new(r_new))
+                            Node(w.wrapping_sub(w_new), l, Box::new(r_new))
                         });
                         ((w_new, a_new), lb, Some(new_tree))
                     } else {
                         let ((w_new, a_new), lb, l_opt) = go(new_path, *l);
                         let new_tree = l_opt.map_or(*r.clone(), |l_new| {
-                            Node(w - w_new, Box::new(l_new), r)
+                            Node(w.wrapping_sub(w_new), Box::new(l_new), r)
                         });
                         ((w_new, a_new), lb, Some(new_tree))
                     }

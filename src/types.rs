@@ -108,11 +108,25 @@ impl<T: Clone> Tree<T> {
                 let wl = l.weight();
                 if i < wl {
                     let (old, l_new) = l.replace_index(w_outer, a_outer, i);
-                    (old, Node(w - old.0 + w_outer, Box::new(l_new), r.clone()))
+                    (
+                        old,
+                        Node(
+                            w.wrapping_sub(old.0).wrapping_add(w_outer),
+                            Box::new(l_new),
+                            r.clone(),
+                        ),
+                    )
                 } else {
                     let (old, r_new) =
                         r.replace_index(w_outer, a_outer, i - wl);
-                    (old, Node(w - old.0 + w_outer, l.clone(), Box::new(r_new)))
+                    (
+                        old,
+                        Node(
+                            w.wrapping_sub(old.0).wrapping_add(w_outer),
+                            l.clone(),
+                            Box::new(r_new),
+                        ),
+                    )
                 }
             }
         }

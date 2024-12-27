@@ -55,15 +55,22 @@ impl<T: Clone> Tree<T> {
     }
 }
 
+impl<T: Clone> Urn<T> {
+    /// Checks whether an urn is well-formed (WF)
+    fn is_wf(&self) -> bool {
+        self.tree.tree_count() == self.size() && self.tree.weights_match()
+    }
+}
+
 #[cfg(test)]
-mod tests {
+mod qc_tests {
     use super::*;
     use quickcheck_macros::quickcheck;
 
     // Ensure that all urns produced using `from_list` are well-formed
     #[quickcheck]
-    fn well_formed_urn(urn: Urn<char>) -> bool {
-        urn.tree.tree_count() == urn.size() && urn.tree.weights_match()
+    fn from_list_produces_wf_urns(elems: Vec<(Weight, char)>) -> bool {
+        urn::from_list(elems).map_or(true, |urn| urn.is_wf())
     }
 
     // Ensure that `from_list` produces equivalent urns as `from_list_naive`
@@ -79,10 +86,57 @@ mod tests {
         urn.size() == naive_urn.size() && urn.weight() == naive_urn.weight()
     }
 
-    // TODO: add some other properties:
-    // - `insert` preserves well-formedness
-    // - `insert` increases `size` by 1
-    // - `uninsert` preserves well-formedness
-    // - `uninsert` decreases `size` by 1
-    // - `replace` preserves well-formedness
+    #[quickcheck]
+    fn insert_preserves_wf(urn: Urn<char>, w: Weight, a: char) -> bool {
+        urn.is_wf() && urn.insert(w, a).is_wf()
+    }
+
+    #[quickcheck]
+    fn insert_increments_size(urn: Urn<char>, w: Weight, a: char) -> bool {
+        urn.size() + 1 == urn.clone().insert(w, a).size()
+    }
+
+    #[quickcheck]
+    fn uninsert_preserves_wf(urn: Urn<char>) -> bool {
+        let (_, _, new_urn) = urn.clone().uninsert();
+        urn.is_wf() && new_urn.map_or(true, |u| u.is_wf())
+    }
+
+    #[quickcheck]
+    fn uninsert_decrements_size(urn: Urn<char>) -> bool {
+        let (_, _, new_urn) = urn.clone().uninsert();
+        urn.size() - 1 == new_urn.map_or(0, |u| u.size())
+    }
+
+    #[quickcheck]
+    fn replace_preserves_wf(urn: Urn<char>, w: Weight, a: char) -> bool {
+        let (_, new_urn) = urn.replace(w, &a);
+        urn.is_wf() && new_urn.is_wf()
+    }
+
+    #[quickcheck]
+    fn replace_preserves_size(urn: Urn<char>, w: Weight, a: char) -> bool {
+        let (_, new_urn) = urn.replace(w, &a);
+        urn.size() == new_urn.size()
+    }
+
+    #[quickcheck]
+    fn remove_preserves_wf(urn: Urn<char>) -> bool {
+        let (_, new_urn) = urn.clone().remove();
+        urn.is_wf() && new_urn.map_or(true, |u| u.is_wf())
+    }
+
+    #[quickcheck]
+    fn remove_decrements_size(urn: Urn<char>) -> bool {
+        let ((_, _), new_urn) = urn.clone().remove();
+        urn.size() - 1 == new_urn.map_or(0, |u| u.size())
+    }
+
+    // `uninsert` retrieves the most recently inserted (weight, element) pair
+    #[quickcheck]
+    fn insert_uninsert(urn: Urn<char>, w: Weight, a: char) -> bool {
+        let new_urn = urn.clone().insert(w, a);
+        let ((w_new, a_new), _, u_opt) = new_urn.uninsert();
+        urn.is_wf() && (w_new, a_new, u_opt) == (w, a, Some(urn))
+    }
 }
