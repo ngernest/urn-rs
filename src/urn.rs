@@ -41,7 +41,8 @@ fn sample_weight(w: Weight) -> Weight {
 /*                             Methods for Urn<T>                             */
 /* -------------------------------------------------------------------------- */
 
-/// Creates a singleton urn containing element `a` with weight `w`
+/// Creates a singleton urn containing element `a` with weight `w`.
+/// Time complexity: `O(1)`.
 pub fn singleton<T: Clone>(w: Weight, a: T) -> Urn<T> {
     Urn {
         size: 1,
@@ -50,8 +51,8 @@ pub fn singleton<T: Clone>(w: Weight, a: T) -> Urn<T> {
 }
 
 /// Naive implementation of `from_list`, which just folds `insert` over a
-/// vector of (weight, element) pairs.
-/// TODO: add QC property that says `from_list` behaves the same as `from_list_naive`
+/// vector of (weight, element) pairs.      
+/// Time complexity: `O(n log n)`.
 pub fn from_list_naive<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
     match elems.as_slice() {
         [] => None,
@@ -65,7 +66,8 @@ pub fn from_list_naive<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
 }
 
 /// An optimized version of `from_list`, which builds an almost perfect tree
-/// in linear time (see `almost_perfect.rs`)
+/// in linear time (see `almost_perfect.rs`)    
+/// Time complexity: `O(n)`.
 pub fn from_list<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
     if elems.is_empty() {
         None
@@ -134,7 +136,8 @@ impl<T: Clone> Urn<T> {
         )
     }
 
-    /// Inserts a new element `a` with weight `w` into the `Urn`
+    /// Inserts a new element `a` with weight `w` into the `Urn`.
+    /// Time complexity: `O(log n)`.
     pub fn insert(self, w_outer: Weight, a_outer: T) -> Self {
         /// Helper function which updates the weights on all the
         /// nodes encountered on a `path` through the `tree`.              
@@ -185,7 +188,7 @@ impl<T: Clone> Urn<T> {
     /// `uninsert`s (deletes) the most-recently-inserted weighted value `(w, a)`
     /// from the urn, returning `(w, a)`, the lower bound `lb` for the bucket
     /// that previously contained `a`, and an optional new urn
-    /// (since `uninsert`-ing from an `Urn` of size 1 produces `None`)
+    /// (since `uninsert`-ing from an `Urn` of size 1 produces `None`).    
     pub fn uninsert(self) -> ((Weight, T), Weight, Option<Self>) {
         fn go<T: Clone>(
             path: u32,
@@ -247,10 +250,12 @@ impl<T: Clone> Urn<T> {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                           Random methods for Urns                          */
+/*                       Randomized methods for Urns                          */
 /* -------------------------------------------------------------------------- */
 
 impl<T: Clone> Urn<T> {
+    /// Randomly sample an element from the distribution represented by the urn.
+    /// Time complexity: `O(log n)`.
     pub fn sample(self) -> T {
         let i = sample_weight(self.weight());
         self.sample_index(i)
@@ -269,6 +274,9 @@ impl<T: Clone> Urn<T> {
         self.replace_index(w, a, i)
     }
 
+    /// Removes a random element from the urn, returning it along with its weight,
+    /// and the resultant urn in an `Option` (which is `None` if the urn is empty).
+    /// Time complexity: `O(log n)`.
     pub fn remove(self) -> ((Weight, T), Option<Self>) {
         let i = sample_weight(self.weight());
         self.remove_index(i)
