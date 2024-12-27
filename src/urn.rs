@@ -89,17 +89,22 @@ impl<T: Clone> Urn<T> {
         self.size
     }
 
-    /// Same as the `weight` method for `Tree<T>`
+    /// Retrieves the `weight` of the tree underlying the urn
     pub fn weight(&self) -> Weight {
         self.tree.weight()
     }
 
-    /// Same as the `sample_index` method for `Tree<T>`
+    /// Samples the value at index `i` from an urn
     fn sample_index(self, i: Index) -> T {
         self.tree.sample_index(i)
     }
 
-    /// Same as the `update_index` method for `Tree<T>`
+    /// `u.update(f, i)` samples an element from the urn `u`, then replaces the
+    /// chosen element `a` and its weight `w` by a new element `a_new`
+    /// with weight `w_new`, where `(w_new, a_new) = f(w, a)`.    
+    /// This function returns a triple `((w, a), (w_new, a_new), u_new)`,
+    /// where `u_new` is the same urn as `u`,
+    /// but with `(w, a)` replaced by `(w_new, a_new)`.
     fn update_index<F>(
         &self,
         f: F,
@@ -119,7 +124,9 @@ impl<T: Clone> Urn<T> {
         )
     }
 
-    /// Same as the `replace` method for `Tree<T>`
+    /// Samples from the urn, and returns the sampled element and its weight,
+    /// along with a new urn with the sampled elements removed and a new element
+    /// `a` with weight `w` added.
     fn replace_index(
         &self,
         w: Weight,
@@ -261,6 +268,12 @@ impl<T: Clone> Urn<T> {
         self.sample_index(i)
     }
 
+    /// Randomly samples an element from the urn, then replaces the
+    /// chosen element `a` and its weight `w` by a new element `a_new`
+    /// with weight `w_new`, where `(w_new, a_new) = f(w, a)`.    
+    /// This function returns a triple `((w, a), (w_new, a_new), new_urn)`,
+    /// where `new_urn` has `(w, a)` replaced by `(w_new, a_new)`.    
+    /// Time complexity: `O(log n)`.
     pub fn update<F>(&self, f: F) -> ((Weight, &T), (Weight, &T), Self)
     where
         F: Fn(Weight, &T) -> (Weight, &T),
@@ -269,6 +282,10 @@ impl<T: Clone> Urn<T> {
         self.update_index(f, i)
     }
 
+    /// `urn.replace(w, a)` samples a random element and returns it
+    /// along with an urn where the sampled element has been replaced with
+    /// the element `a` with weight `w`.    
+    /// Time complexity: `O(log n)`.
     pub fn replace(&self, w: Weight, a: &T) -> ((Weight, &T), Self) {
         let i = sample_weight(self.weight());
         self.replace_index(w, a, i)
@@ -284,7 +301,7 @@ impl<T: Clone> Urn<T> {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                    Tests                                   */
+/*                               Unit Tests                                   */
 /* -------------------------------------------------------------------------- */
 
 #[cfg(test)]
