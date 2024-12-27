@@ -26,7 +26,11 @@ fn reverse_bits(n: u32, x: u32) -> u32 {
 /// Smart constructor: builds a `Node` whose weight is the
 /// sum of the two subtree's weights
 fn node<T: Clone>(l: Tree<T>, r: Tree<T>) -> Tree<T> {
-    Node(l.weight() + r.weight(), Box::new(l), Box::new(r))
+    Node(
+        l.weight().wrapping_add(r.weight()),
+        Box::new(l),
+        Box::new(r),
+    )
 }
 
 /// Alias for the `Leaf` constructor

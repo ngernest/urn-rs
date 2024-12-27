@@ -1,13 +1,17 @@
-use crate::types::{Tree, Tree::*, Urn};
+use crate::types::{Tree, Tree::*, Urn, Weight};
+use crate::urn;
 use quickcheck::*;
 
 /* -------------------------------------------------------------------------- */
 /*                                 Generators                                 */
 /* -------------------------------------------------------------------------- */
 
-impl Arbitrary for Tree<char> {
-    fn arbitrary(g: &mut Gen) -> Self {
-        todo!()
+/// QuickCheck generator for `Urn`s with at most size 10
+impl Arbitrary for Urn<char> {
+    fn arbitrary(_g: &mut Gen) -> Self {
+        let elems = Vec::<(Weight, char)>::arbitrary(&mut Gen::new(10));
+        let default = urn::singleton(1, 'a');
+        urn::from_list(elems).unwrap_or(default)
     }
 }
 
@@ -20,15 +24,17 @@ impl<T: Clone> Tree<T> {
     fn tree_count(&self) -> u32 {
         match self {
             Leaf(_, _) => 1,
-            Node(_, l, r) => l.tree_count() + r.tree_count(),
+            Node(_, l, r) => l.tree_count().wrapping_add(r.tree_count()),
         }
     }
 
     /// Sums the weights at all the leaves
-    fn sum_leaf_weights(&self) -> u32 {
+    fn sum_leaf_weights(&self) -> Weight {
         match self {
             Leaf(w, _) => *w,
-            Node(_, l, r) => l.sum_leaf_weights() + r.sum_leaf_weights(),
+            Node(_, l, r) => {
+                l.sum_leaf_weights().wrapping_add(r.sum_leaf_weights())
+            }
         }
     }
 
@@ -38,7 +44,7 @@ impl<T: Clone> Tree<T> {
         match self {
             Leaf(_, _) => true,
             Node(w, l, r) => {
-                *w == l.sum_leaf_weights() + r.sum_leaf_weights()
+                *w == l.sum_leaf_weights().wrapping_add(r.sum_leaf_weights())
                     && l.weights_match()
                     && r.weights_match()
             }
@@ -46,12 +52,27 @@ impl<T: Clone> Tree<T> {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use quickcheck_macros::quickcheck;
 
-//     #[quickcheck]
-//     fn well_formed_urn(urn: Urn<char>) -> bool {
-//         urn.tree.tree_count() == urn.size() && urn.tree.weights_match()
-//     }
-// }
+    // Ensure that all urns produced using `from_list` are well-formed
+    #[quickcheck]
+    fn well_formed_urn(urn: Urn<char>) -> bool {
+        urn.tree.tree_count() == urn.size() && urn.tree.weights_match()
+    }
+
+    // Ensure that `from_list` produces equivalent urns as `from_list_naive`
+    // (i.e. the urns have the same size & same cumulative weight)
+    #[quickcheck]
+    fn from_list_equivalent_to_from_list_naive(
+        elems: Vec<(Weight, char)>,
+    ) -> bool {
+        let default = urn::singleton(1, 'a');
+        let urn = urn::from_list(elems.clone()).unwrap_or(default.clone());
+        let naive_urn = urn::from_list_naive(elems).unwrap_or(default);
+
+        urn.size() == naive_urn.size() && urn.weight() == naive_urn.weight()
+    }
+}

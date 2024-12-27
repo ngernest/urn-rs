@@ -42,7 +42,7 @@ fn sample_weight(w: Weight) -> Weight {
 /* -------------------------------------------------------------------------- */
 
 /// Creates a singleton urn containing element `a` with weight `w`
-fn singleton<T: Clone>(w: Weight, a: T) -> Urn<T> {
+pub fn singleton<T: Clone>(w: Weight, a: T) -> Urn<T> {
     Urn {
         size: 1,
         tree: Leaf(w, a),
@@ -52,7 +52,7 @@ fn singleton<T: Clone>(w: Weight, a: T) -> Urn<T> {
 /// Naive implementation of `from_list`, which just folds `insert` over a
 /// vector of (weight, element) pairs.
 /// TODO: add QC property that says `from_list` behaves the same as `from_list_naive`
-fn from_list_naive<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
+pub fn from_list_naive<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
     match elems.as_slice() {
         [] => None,
         [(w, a), ws @ ..] => Some(
@@ -66,7 +66,7 @@ fn from_list_naive<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
 
 /// An optimized version of `from_list`, which builds an almost perfect tree
 /// in linear time (see `almost_perfect.rs`)
-fn from_list<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
+pub fn from_list<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
     if elems.is_empty() {
         None
     } else {
@@ -93,7 +93,7 @@ impl<T: Clone> Urn<T> {
     }
 
     /// Same as the `sample_index` method for `Tree<T>`
-    fn sample_index(self, i: u32) -> T {
+    fn sample_index(self, i: Index) -> T {
         self.tree.sample_index(i)
     }
 
@@ -152,20 +152,22 @@ impl<T: Clone> Urn<T> {
             tree: Tree<T>,
         ) -> Tree<T> {
             match tree {
-                Leaf(w, a) => {
-                    node(w + w_outer, leaf(w, a), leaf(w_outer, a_outer))
-                }
+                Leaf(w, a) => node(
+                    w.wrapping_add(w_outer),
+                    leaf(w, a),
+                    leaf(w_outer, a_outer),
+                ),
                 Node(w, l, r) => {
                     let new_path = path >> 1;
                     if test_bit(path, 0) {
                         node(
-                            w + w_outer,
+                            w.wrapping_add(w_outer),
                             *l,
                             go(w_outer, a_outer, new_path, *r),
                         )
                     } else {
                         node(
-                            w + w_outer,
+                            w.wrapping_add(w_outer),
                             go(w_outer, a_outer, new_path, *l),
                             *r,
                         )

@@ -3,7 +3,7 @@
 /* -------------------------------------------------------------------------- */
 
 /// Weights are guaranteed to be non-negative since they're `u32`s
-pub type Weight = u32;
+pub type Weight = u8;
 
 /// Datatype for indexes (same as weights)
 pub type Index = Weight;
@@ -17,7 +17,7 @@ pub enum Tree<T: Clone> {
 }
 
 /// An `Urn` is a `Tree`, along with its `size`
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Urn<T: Clone> {
     pub size: u32,
     pub tree: Tree<T>,
@@ -39,7 +39,7 @@ impl<T: Clone> Tree<T> {
     }
 
     /// Samples the value at index `i` from a `tree`
-    pub fn sample_index(self, i: u32) -> T {
+    pub fn sample_index(self, i: Index) -> T {
         match self {
             Leaf(_, a) => a.clone(),
             Node(_, l, r) => {
