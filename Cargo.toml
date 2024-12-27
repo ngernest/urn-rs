@@ -1,5 +1,10 @@
 [package]
 name = "urn"
+description = "A Rust implementation of the Urn data structure (Lampropulos et al. 2017) for purely functional random sampling"
+repository = "https://github.com/ngernest/urn-rs"
+readme = "README.md"
+license = "MIT"
+authors = ["Ernest Ng <ernest@cs.cornell.edu>"]
 version = "0.1.0"
 edition = "2021"
 
