@@ -2,7 +2,7 @@
 /*                              Type Definitions                              */
 /* -------------------------------------------------------------------------- */
 
-/// Weights are guaranteed to be non-negative since they're `u32`s
+/// Weights are guaranteed to be non-negative
 pub type Weight = u8;
 
 /// Datatype for indexes (same as weights)
