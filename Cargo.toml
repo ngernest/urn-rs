@@ -3,5 +3,11 @@ name = "urn"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "urn"
+test = true
+
 [dependencies]
 rand = "0.8.5"
+quickcheck = "1.0.3"
+quickcheck_macros = "1.0.0"
