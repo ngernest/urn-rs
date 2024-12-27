@@ -19,6 +19,9 @@ impl Arbitrary for Urn<char> {
 /*                                 Properties                                 */
 /* -------------------------------------------------------------------------- */
 
+// Properties are adapted from the Coq lemmas in
+// https://github.com/antalsz/urn-random/blob/master/coq/urn.v
+
 impl<T: Clone> Tree<T> {
     /// Counts the no. of nodes in the tree
     fn tree_count(&self) -> u32 {
@@ -75,4 +78,11 @@ mod tests {
 
         urn.size() == naive_urn.size() && urn.weight() == naive_urn.weight()
     }
+
+    // TODO: add some other properties:
+    // - `insert` preserves well-formedness
+    // - `insert` increases `size` by 1
+    // - `uninsert` preserves well-formedness
+    // - `uninsert` decreases `size` by 1
+    // - `replace` preserves well-formedness
 }
