@@ -39,7 +39,7 @@ impl<T: Clone> Tree<T> {
     }
 
     /// Samples the value at index `i` from a `tree`
-    pub fn sample_index(self, i: Index) -> T {
+    pub fn sample_index(&self, i: Index) -> T {
         match self {
             Leaf(_, a) => a.clone(),
             Node(_, l, r) => {

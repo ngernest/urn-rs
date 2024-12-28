@@ -95,7 +95,7 @@ impl<T: Clone> Urn<T> {
     }
 
     /// Samples the value at index `i` from an urn
-    fn sample_index(self, i: Index) -> T {
+    fn sample_index(&self, i: Index) -> T {
         self.tree.sample_index(i)
     }
 
@@ -263,7 +263,7 @@ impl<T: Clone> Urn<T> {
 impl<T: Clone> Urn<T> {
     /// Randomly sample an element from the distribution represented by the urn.
     /// Time complexity: `O(log n)`.
-    pub fn sample(self) -> T {
+    pub fn sample(&self) -> T {
         let i = sample_weight(self.weight());
         self.sample_index(i)
     }
