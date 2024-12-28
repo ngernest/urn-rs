@@ -16,7 +16,10 @@ pub enum Tree<T: Clone> {
     Node(Weight, Box<Tree<T>>, Box<Tree<T>>),
 }
 
-/// An `Urn` is a `Tree`, along with its `size`
+/// An `Urn` is a `Tree`, along with its `size`.         
+/// Note: the same distribution can have multiple tree representations
+/// (see Fig. 4 in the paper), and the order of values in an urn doesn't
+/// matter (see section 3.4).
 #[derive(Debug, PartialEq, Clone)]
 pub struct Urn<T: Clone> {
     pub size: u32,

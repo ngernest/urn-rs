@@ -38,7 +38,9 @@ fn leaf<T: Clone>(w: Weight, a: T) -> Tree<T> {
     Leaf(w, a)
 }
 
-/// Builds an almost perfect tree using the weights and values in `elems`
+/// Builds an *almost perfect* tree using the weights and values in `elems`.   
+/// (An almost perfect tree is one where the difference in depth between any
+/// two leaves is at most one).
 pub fn almost_perfect<T: Clone>(elems: Vec<(Weight, T)>) -> Tree<T> {
     /// Helper function: recurses on the current `depth` of the tree
     /// and the array `elem`s, either inserting two elements at a time
