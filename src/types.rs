@@ -2,6 +2,8 @@
 /*                              Type Definitions                              */
 /* -------------------------------------------------------------------------- */
 
+use std::rc::Rc;
+
 /// Weights are guaranteed to be non-negative
 pub type Weight = u8;
 
@@ -10,18 +12,18 @@ pub type Index = Weight;
 
 /// Polymorphic binary trees, with a weight at each node/leaf.      
 /// Invariant: `Node(w, l, r).weight() == l.weight() + r.weight()`
-#[derive(Debug, PartialEq, Clone)]
-pub enum Tree<T: Clone> {
+#[derive(Debug, PartialEq)]
+pub enum Tree<T> {
     Leaf(Weight, T),
-    Node(Weight, Box<Tree<T>>, Box<Tree<T>>),
+    Node(Weight, Rc<Tree<T>>, Rc<Tree<T>>),
 }
 
 /// An `Urn` is a `Tree`, along with its `size`.         
 /// Note: the same distribution can have multiple tree representations
 /// (see Fig. 4 in the paper), and the order of values in an urn doesn't
 /// matter (see section 3.4).
-#[derive(Debug, PartialEq, Clone)]
-pub struct Urn<T: Clone> {
+#[derive(Debug, PartialEq)]
+pub struct Urn<T> {
     pub size: u32,
     pub tree: Tree<T>,
 }
@@ -82,14 +84,14 @@ impl<T: Clone> Tree<T> {
                     (
                         old,
                         new,
-                        Node(w - old.0 + new.0, Box::new(l_new), r.clone()),
+                        Node(w - old.0 + new.0, Rc::new(l_new), Rc::clone(r)),
                     )
                 } else {
                     let (old, new, r_new) = r.update_index(f, i - wl);
                     (
                         old,
                         new,
-                        Node(w - old.0 + new.0, l.clone(), Box::new(r_new)),
+                        Node(w - old.0 + new.0, Rc::clone(l), Rc::new(r_new)),
                     )
                 }
             }
@@ -102,11 +104,11 @@ impl<T: Clone> Tree<T> {
     pub fn replace_index(
         &self,
         w_outer: Weight,
-        a_outer: &T,
+        a_outer: T,
         i: Index,
-    ) -> ((Weight, &T), Self) {
+    ) -> ((Weight, T), Self) {
         match self {
-            Leaf(w, a) => ((*w, a), Leaf(w_outer, a_outer.clone())),
+            Leaf(w, a) => ((*w, *a), Leaf(w_outer, a_outer)),
             Node(w, l, r) => {
                 let wl = l.weight();
                 if i < wl {
@@ -115,8 +117,8 @@ impl<T: Clone> Tree<T> {
                         old,
                         Node(
                             w.wrapping_sub(old.0).wrapping_add(w_outer),
-                            Box::new(l_new),
-                            r.clone(),
+                            Rc::new(l_new),
+                            Rc::clone(&r),
                         ),
                     )
                 } else {
@@ -126,8 +128,8 @@ impl<T: Clone> Tree<T> {
                         old,
                         Node(
                             w.wrapping_sub(old.0).wrapping_add(w_outer),
-                            l.clone(),
-                            Box::new(r_new),
+                            Rc::clone(&l),
+                            Rc::new(r_new),
                         ),
                     )
                 }

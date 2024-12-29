@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use core::panic;
+use std::{mem, rc::Rc};
 
 use crate::types::{Tree, Tree::*, Weight};
 
@@ -25,27 +26,23 @@ fn reverse_bits(n: u32, x: u32) -> u32 {
 
 /// Smart constructor: builds a `Node` whose weight is the
 /// sum of the two subtree's weights
-fn node<T: Clone>(l: Tree<T>, r: Tree<T>) -> Tree<T> {
-    Node(
-        l.weight().wrapping_add(r.weight()),
-        Box::new(l),
-        Box::new(r),
-    )
+fn node<T>(l: Tree<T>, r: Tree<T>) -> Tree<T> {
+    Node(l.weight().wrapping_add(r.weight()), Rc::new(l), Rc::new(r))
 }
 
 /// Alias for the `Leaf` constructor
-fn leaf<T: Clone>(w: Weight, a: T) -> Tree<T> {
+fn leaf<T>(w: Weight, a: T) -> Tree<T> {
     Leaf(w, a)
 }
 
 /// Builds an *almost perfect* tree using the weights and values in `elems`.   
 /// (An almost perfect tree is one where the difference in depth between any
 /// two leaves is at most one).
-pub fn almost_perfect<T: Clone>(elems: Vec<(Weight, T)>) -> Tree<T> {
+pub fn almost_perfect<T>(elems: Vec<(Weight, T)>) -> Tree<T> {
     /// Helper function: recurses on the current `depth` of the tree
     /// and the array `elem`s, either inserting two elements at a time
     /// or one at a time
-    fn go<T: Clone>(
+    fn go<T: Default>(
         depth: u32,
         index: u32,
         elems: &[(Weight, T)],
@@ -57,7 +54,7 @@ pub fn almost_perfect<T: Clone>(elems: Vec<(Weight, T)>) -> Tree<T> {
             if reverse_bits(perfect_depth, index) < remainder {
                 match elems {
                     [(wl, tl), (wr, tr), tail @ ..] => (
-                        node(leaf(*wl, tl.clone()), leaf(*wr, tr.clone())),
+                        node(leaf(*wl, mem::take(tl)), leaf(*wr, *tr)),
                         tail,
                         index + 1,
                     ),
@@ -69,9 +66,7 @@ pub fn almost_perfect<T: Clone>(elems: Vec<(Weight, T)>) -> Tree<T> {
                 }
             } else {
                 match elems {
-                    [(w, x), tail @ ..] => {
-                        (leaf(*w, x.clone()), tail, index + 1)
-                    }
+                    [(w, x), tail @ ..] => (leaf(*w, *x), tail, index + 1),
                     _ => panic!(
                         "Expected size {} but got input of length {} instead",
                         og_size,

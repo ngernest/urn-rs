@@ -9,6 +9,7 @@ use crate::{
     },
 };
 use rand::prelude::*;
+use std::rc::Rc;
 
 /* -------------------------------------------------------------------------- */
 /*                                   Helpers                                  */
@@ -16,12 +17,12 @@ use rand::prelude::*;
 
 /// Smart constructor for `Node`s
 /// (automatically wraps the two subtrees in `Box`es)
-fn node<T: Clone>(w: Weight, l: Tree<T>, r: Tree<T>) -> Tree<T> {
-    Node(w, Box::new(l), Box::new(r))
+fn node<T>(w: Weight, l: Tree<T>, r: Tree<T>) -> Tree<T> {
+    Node(w, Rc::new(l), Rc::new(r))
 }
 
 /// Alias for the `Leaf` constructor
-fn leaf<T: Clone>(w: Weight, a: T) -> Tree<T> {
+fn leaf<T>(w: Weight, a: T) -> Tree<T> {
     Leaf(w, a)
 }
 
@@ -43,7 +44,7 @@ fn sample_weight(w: Weight) -> Weight {
 
 /// Creates a singleton urn containing element `a` with weight `w`.
 /// Time complexity: `O(1)`.
-pub fn singleton<T: Clone>(w: Weight, a: T) -> Urn<T> {
+pub fn singleton<T>(w: Weight, a: T) -> Urn<T> {
     Urn {
         size: 1,
         tree: Leaf(w, a),
@@ -53,13 +54,13 @@ pub fn singleton<T: Clone>(w: Weight, a: T) -> Urn<T> {
 /// Naive implementation of `from_list`, which just folds `insert` over a
 /// vector of (weight, element) pairs.      
 /// Time complexity: `O(n log n)`.
-pub fn from_list_naive<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
+pub fn from_list_naive<T>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
     match elems.as_slice() {
         [] => None,
         [(w, a), ws @ ..] => Some(
-            ws.iter()
-                .fold(singleton(*w, a.clone()), |acc, (w_new, a_new)| {
-                    acc.insert(*w_new, a_new.clone())
+            ws.into_iter()
+                .fold(singleton(*w, *a), |acc, (w_new, a_new)| {
+                    acc.insert(*w_new, a_new)
                 }),
         ),
     }
@@ -68,7 +69,7 @@ pub fn from_list_naive<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
 /// An optimized version of `from_list`, which builds an almost perfect tree
 /// in linear time (see `almost_perfect.rs`)    
 /// Time complexity: `O(n)`.
-pub fn from_list<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
+pub fn from_list<T>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
     if elems.is_empty() {
         None
     } else {
@@ -83,7 +84,7 @@ pub fn from_list<T: Clone>(elems: Vec<(Weight, T)>) -> Option<Urn<T>> {
 /*                Deterministic (index-based) methods for Urns                */
 /* -------------------------------------------------------------------------- */
 
-impl<T: Clone> Urn<T> {
+impl<T> Urn<T> {
     /// Fetches the `size` of the urn
     pub fn size(&self) -> u32 {
         self.size
@@ -155,7 +156,7 @@ impl<T: Clone> Urn<T> {
         /// Note: since recursive closures aren't really possible
         /// in Rust, and since nested functions can't access outer variables,
         /// we need to supply the `w_outer` and `a_outer` arguments explicitly.
-        fn go<T: Clone>(
+        fn go<T>(
             w_outer: Weight,
             a_outer: T,
             path: u32,
@@ -197,7 +198,7 @@ impl<T: Clone> Urn<T> {
     /// that previously contained `a`, and an optional new urn
     /// (since `uninsert`-ing from an `Urn` of size 1 produces `None`).    
     pub fn uninsert(self) -> ((Weight, T), Weight, Option<Self>) {
-        fn go<T: Clone>(
+        fn go<T>(
             path: u32,
             tree: Tree<T>,
         ) -> ((Weight, T), Weight, Option<Tree<T>>) {
@@ -207,14 +208,14 @@ impl<T: Clone> Urn<T> {
                     let new_path = path >> 1;
                     if test_bit(path, 0) {
                         let ((w_new, a_new), lb, r_opt) = go(new_path, *r);
-                        let new_tree = r_opt.map_or(*l.clone(), |r_new| {
-                            Node(w.wrapping_sub(w_new), l, Box::new(r_new))
+                        let new_tree = r_opt.map_or(l, |r_new| {
+                            Node(w.wrapping_sub(w_new), l, Rc::new(r_new))
                         });
                         ((w_new, a_new), lb, Some(new_tree))
                     } else {
                         let ((w_new, a_new), lb, l_opt) = go(new_path, *l);
-                        let new_tree = l_opt.map_or(*r.clone(), |l_new| {
-                            Node(w.wrapping_sub(w_new), Box::new(l_new), r)
+                        let new_tree = l_opt.map_or(r, |l_new| {
+                            Node(w.wrapping_sub(w_new), Rc::new(l_new), r)
                         });
                         ((w_new, a_new), lb, Some(new_tree))
                     }
@@ -243,13 +244,13 @@ impl<T: Clone> Urn<T> {
                 if i < lb {
                     let ((w_new, a_new), final_urn) =
                         new_urn.replace_index(w, &a, i);
-                    ((w_new, a_new.clone()), Some(final_urn))
+                    ((w_new, *a_new), Some(final_urn))
                 } else if i < lb + w {
                     ((w, a), Some(new_urn))
                 } else {
                     let ((w_new, a_new), final_urn) =
                         new_urn.replace_index(w, &a, i - w);
-                    ((w_new, a_new.clone()), Some(final_urn))
+                    ((w_new, *a_new), Some(final_urn))
                 }
             }
         }
@@ -260,7 +261,7 @@ impl<T: Clone> Urn<T> {
 /*                       Randomized methods for Urns                          */
 /* -------------------------------------------------------------------------- */
 
-impl<T: Clone> Urn<T> {
+impl<T> Urn<T> {
     /// Randomly sample an element from the distribution represented by the urn.
     /// Time complexity: `O(log n)`.
     pub fn sample(&self) -> T {
