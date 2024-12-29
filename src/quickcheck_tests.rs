@@ -6,10 +6,10 @@ use quickcheck::*;
 /*                                 Generators                                 */
 /* -------------------------------------------------------------------------- */
 
-/// QuickCheck generator for `Urn`s with at most size 10
+/// QuickCheck generator for `Urn`s with at most size 15
 impl Arbitrary for Urn<char> {
     fn arbitrary(_g: &mut Gen) -> Self {
-        let elems = Vec::<(Weight, char)>::arbitrary(&mut Gen::new(10));
+        let elems = Vec::<(Weight, char)>::arbitrary(&mut Gen::new(15));
         let default = urn::singleton(1, 'a');
         urn::from_list(elems).unwrap_or(default)
     }
