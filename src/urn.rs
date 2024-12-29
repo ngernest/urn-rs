@@ -111,7 +111,7 @@ impl<T: Clone> Urn<T> {
         i: Index,
     ) -> ((Weight, &T), (Weight, &T), Self)
     where
-        F: Fn(Weight, &T) -> (Weight, &T),
+        F: FnOnce(Weight, &T) -> (Weight, &T),
     {
         let (old, new, new_tree) = self.tree.update_index(f, i);
         (
@@ -276,7 +276,7 @@ impl<T: Clone> Urn<T> {
     /// Time complexity: `O(log n)`.
     pub fn update<F>(&self, f: F) -> ((Weight, &T), (Weight, &T), Self)
     where
-        F: Fn(Weight, &T) -> (Weight, &T),
+        F: FnOnce(Weight, &T) -> (Weight, &T),
     {
         let i = sample_weight(self.weight());
         self.update_index(f, i)
